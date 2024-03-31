@@ -15,7 +15,7 @@ from utils import is_pdf_by_extension
 
 
 # Assuming you have a text file 'data.txt' in the same directory as your main.py
-file = '../scalexi.txt'
+file = '../CSCI2270_Info.txt'
 
 data_loader = DataLoader(file)
 data = data_loader.load_data()
@@ -24,10 +24,10 @@ preprocessed_data = data_loader.preprocess_data(data)
 # Ensure the API key is set
 get_api_key()
 
-with open('scalexi.txt', 'r', encoding='utf-8') as file:
+with open('CSCI2270_Info.txt', 'r', encoding='utf-8') as file:
     file_contents = file.read()
 
-txt_file_path = 'scalexi.txt'
+txt_file_path = 'CSCI2270_Info.txt'
 
 # Load the entire content of the file into a single string
 with open(txt_file_path, 'r', encoding='utf-8') as file:

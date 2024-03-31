@@ -2,7 +2,7 @@
 import requests
 from urllib.parse import urlparse
 from PyPDF2 import PdfReader
-import textract  # You might choose this for more complex PDFs or if PyPDF2 doesn't meet your needs
+#import textract  # You might choose this for more complex PDFs or if PyPDF2 doesn't meet your needs
 
 class DataLoader:
     def load_from_pdf(self, pdf_path):
