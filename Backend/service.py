@@ -10,8 +10,6 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from config import get_api_key
 from data_loader import DataLoader
-from utils import is_pdf_by_extension
-
 
 
 # Assuming you have a text file 'data.txt' in the same directory as your main.py
