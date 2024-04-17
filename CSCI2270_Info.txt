@@ -1,0 +1,18 @@
+Summary:
+CSCI2270 is a graduate seminar course that covers the state of the research and practice at the intersection of data management and artificial intelligence. 
+We will explore the symbiotic relationship between AI and effective data management techniques by studying how machine learning techniques can solve database challenges, and the use of data systems to build scalable AI solutions. 
+Specific topics of interest will be the role and use of vector databases and Large Language Models (LLMs) in AI and data management. 
+This class will be structured as a seminar with a semester-long project component. The students will present, review and discuss papers. 
+As groups, they will also conduct a research project over the course of the semester. In addition, there will be several guest lectures by researchers and professional experts in the area. 
+
+Prerequisites and Enrollment:
+CSCI 2270 is a graduate-level seminar course. Undergraduates are welcome. 
+The prerequisite is CSCI 1270: Database Systems (or equivalent). Please note that this is a database systems class; it's not an AI or ML class and won’t teach these topics. 
+Since we will frequently refer to and use AI techniques and technologies, it is preferable for the students taking the class to have familiarity and working knowledge with them to be able to participate fully and succeed.
+
+Logistics: 
+Instructors: Ugur Cetintemel (ugur_cetintemel@brown.edu), Stan Zdonik (stan_zdonik@brown.edu)
+HTA: Richard Tang (richard_tang@brown.edu)
+Time: Mondays Noon — 2:20pm
+Room: CIT 241 (Swig)
+
