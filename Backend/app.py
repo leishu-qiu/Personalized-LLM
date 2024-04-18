@@ -13,6 +13,7 @@ from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse
 
 
 app = Flask(__name__)
@@ -83,12 +84,20 @@ def scrape_url():
         text = soup.get_text()
         chunks = chunk_text(text)
         #update
-        vectorstore.add_texts(chunks)
+        domain_name = get_domain(url)
+        metadatas = [{'source': domain_name} for _ in chunks]
+        vectorstore.add_texts(chunks, metadatas)
         # Optionally, process the text or return a portion of it
         return jsonify({'content': text[:500]})  # Return first 500 characters of the text
     except requests.RequestException as e:
         return jsonify({'message': 'Failed to retrieve the URL', 'error': str(e)})
 
+
+def get_domain(url):
+    """ Extract the domain name from a URL. """
+    parsed_uri = urlparse(url)
+    full_path = f'{parsed_uri.netloc}{parsed_uri.path}'
+    return full_path.rstrip('/') 
 
 def chunk_text(text, chunk_size=1000):
     # Split the text by sentences to avoid breaking in the middle of a sentence
