@@ -1,0 +1,39 @@
+CSCI 1951L: Blockchains and Cryptocurrencies Course Information and Syllabus
+Semester II, 2024
+  Lectures Room
+Lecture Notes
+TTh 2:30pm-3:50pm
+Kassar House FOX
+    http://cs.brown.edu/courses/cs1951l/
+A recording of each lecture will be available soon after it is given.
+ 
+Textbook
+There is no textbook for this class. However, there will be lecture notes distributed by Professor Herlihy and available on the website. These lecture notes are from an early draft of a textbook that Professor Herlihy is working on with collaborators. These lecture notes may serve as an ad-hoc textbook. These notes should at no point be distributed to those outside the class under any circumstances.
+All course materials can be found on the course website. Slides for the lectures are released the day before, and recordings of the lectures are posted the following class. Assignments are also posted on the site when they are released. EdStem, our online QA forum, will also be updated regularly with assignment clarifications and pinned posts relating to frequently asked questions.
+Prerequisite
+Either CSCI 300, 320, or 330. In particular, you should be a competent programmer
+Instructor 
+Maurice Herlihy (mph@cs.brown.edu) 
+Office
+CIT 341
+Professor’s Office Hours
+By appointment
+Head TAs
+Brian Sutioso, Abhyudaya Sharma
+UTAs 
+Sam Devorsetz
+TA Office Hours
+See course site.
+        
+Time Requirements
+
+The course will require at least 180 hours over the course of the semester
+ 
+In addition to three hours per week in class, you will spend 3-10 hours per week on assignments. Assignment times will vary.
+(including class time).
+Goals
+The primary goal is for you to understand how blockchain technology works, and how to separate myth and hype from the reality. Topics covered include consensus and distributed computing, example cryptocurrencies, programming smart contracts, privacy and secrecy, transfer networks, atomic swaps and
+ 
+Due Dates
+All assignments must be handed in by 11:59 pm on their due dates.
+transactions, non-currency applications of blockchains, and legal and social implications.

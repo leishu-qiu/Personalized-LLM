@@ -11,16 +11,16 @@ from pinecone import ServerlessSpec
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
-
+import requests
+from bs4 import BeautifulSoup
 
 
 app = Flask(__name__)
 
 
 # LangChain Chat Model setup
-os.environ["OPENAI_API_KEY"] = ""
-os.environ['PINECONE_API_KEY'] = ""
-# app.vector_store = None
+os.environ["OPENAI_API_KEY"] = "HIDDEN"
+os.environ['PINECONE_API_KEY'] = "HIDDEN"
 
 llm = ChatOpenAI(
     openai_api_key=os.environ.get("OPENAI_API_KEY"),
@@ -29,6 +29,18 @@ llm = ChatOpenAI(
 
 # Embedding model
 embed_model = OpenAIEmbeddings(model="text-embedding-ada-002")
+
+#update
+index_name = "test-new"
+vectorstore = PineconeVectorStore(index_name=index_name, embedding=embed_model)
+
+memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+conversation_chain = ConversationalRetrievalChain.from_llm(
+    llm=llm,
+    chain_type="stuff",
+    retriever= vectorstore.as_retriever(),
+    memory=memory
+)
 
 # Allowed extension check
 ALLOWED_EXTENSIONS = {'txt'}
@@ -42,8 +54,7 @@ def index():
 @app.route('/query', methods=['POST'])
 def handle_query():
     user_input = request.form.get('query', '')
-    conversation_chain = setup_conversation_chain()
-    answer = chat(user_input, conversation_chain) if user_input else 'No query provided.'
+    answer = chat(user_input) if user_input else 'No query provided.'
     return jsonify({'answer': answer})
 
 @app.route('/upload', methods=['POST'])
@@ -58,34 +69,29 @@ def handle_upload():
             return jsonify({'message': 'File uploaded and processed successfully.'})
     return jsonify({'message': 'Invalid file or no file uploaded.'})
 
-def init_vector_store(chunks, embed_model, index_name):
-    return PineconeVectorStore.from_documents(chunks, embed_model, index_name=index_name)
+
 
 def update_document_store(file_path):
     loader = TextLoader(file_path=file_path, encoding="utf-8")
     data = loader.load()
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     chunks = text_splitter.split_documents(data)
-    index_name = "test-rag"  # Update this as needed
-    #TODO: update = true?
-    vector_store = PineconeVectorStore.from_documents(chunks, embed_model, index_name=index_name)
+    #update
+    vectorstore.add_documents(chunks)
 
-    app.vector_store = vector_store
+# def setup_conversation_chain():
+#     # Assume documents are already loaded and indexed at startup
+#     # docsearch = PineconeVectorStore(index_name="test-rag")
+#     memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+#     conversation_chain = ConversationalRetrievalChain.from_llm(
+#         llm=llm,
+#         chain_type="stuff",
+#         retriever= vectorstore.as_retriever(),
+#         memory=memory
+#     )
+#     return conversation_chain
 
-def setup_conversation_chain():
-    # Assume documents are already loaded and indexed at startup
-    # docsearch = PineconeVectorStore(index_name="test-rag")
-    vector_store = app.vector_store
-    memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
-    conversation_chain = ConversationalRetrievalChain.from_llm(
-        llm=llm,
-        chain_type="stuff",
-        retriever= vector_store.as_retriever(),
-        memory=memory
-    )
-    return conversation_chain
-
-def chat(query, conversation_chain):
+def chat(query):
     result = conversation_chain({"question": query})
     answer = result["answer"]
     return answer
