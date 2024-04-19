@@ -82,6 +82,19 @@ def disable_filtering():
     
     return jsonify({'message': 'Selective filtering disabled'})
 
+# @app.route('/selective_delete', methods=['POST'])
+# def handle_selective_deletion():
+#     selected_sources = request.get_json().get('selectedSources',[])
+#     if not selected_sources:
+#         return jsonify({'message': 'No sources provided for deletion'}), 400
+#     filters= {'source': {'$in': selected_sources}}
+#     try:
+#         # Call the delete method with the filter
+#         vectorstore.delete(filter=filters)
+#         return jsonify({'message': 'Requested sources have been deleted'}), 200
+#     except Exception as e:
+#         return jsonify({'error': str(e)}), 500
+
 @app.route('/upload', methods=['POST'])
 def handle_upload():
     if 'file' in request.files:
