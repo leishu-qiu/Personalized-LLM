@@ -5,9 +5,7 @@ from werkzeug.utils import secure_filename
 
 from langchain.chains import ConversationalRetrievalChain
 from langchain_openai import ChatOpenAI
-from flask import Flask, render_template, request, jsonify,g
-from pinecone import Pinecone
-from pinecone import ServerlessSpec
+from flask import Flask, render_template, request, jsonify,session
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
@@ -17,6 +15,7 @@ from urllib.parse import urlparse
 
 
 app = Flask(__name__)
+app.secret_key = '123456'  
 
 
 # LangChain Chat Model setup
@@ -56,8 +55,32 @@ def index():
 @app.route('/query', methods=['POST'])
 def handle_query():
     user_input = request.form.get('query', '')
-    answer = chat(user_input) if user_input else 'No query provided.'
+    # print(session.get('selected_sources'))
+    # print(session.get('use_filter'))
+    use_filter = session.get('use_filter')
+    # print(use_filter)
+    if use_filter:
+        answer = chat_with_filter(user_input) if user_input else 'No query provided.'
+    else:
+        answer = chat(user_input) 
     return jsonify({'answer': answer})
+
+@app.route('/selective', methods=['POST'])
+def handle_selective_sources():
+    selected_sources = request.get_json().get('selectedSources')
+    session['use_filter'] = True
+    session['selected_sources'] = selected_sources    
+    return jsonify({'message': 'Sources set successfully'})
+
+@app.route('/selective_off', methods=['POST'])
+def disable_filtering():
+    # Clear specific session variables
+    if 'selected_sources' in session:
+        del session['selected_sources']
+    # Alternatively, disable filtering without deleting variables
+    session['use_filter'] = False
+    
+    return jsonify({'message': 'Selective filtering disabled'})
 
 @app.route('/upload', methods=['POST'])
 def handle_upload():
@@ -129,10 +152,25 @@ def update_document_store(file_path):
 
 def chat(query):
     result = conversation_chain({"question": query})
-    print(result["source_documents"])
+    # print(result["source_documents"])
+    print("chat without filter")
     answer = result["answer"]
     return answer
 
+def chat_with_filter(query):
+    selected_sources = session.get('selected_sources',[])
+    filters = {"source": {"$in": selected_sources}}
+    print(filters)
+    conversation_chain = ConversationalRetrievalChain.from_llm(
+        return_source_documents = True,
+        llm=llm,
+        chain_type="stuff",
+        retriever= vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.9, "filter":filters}),
+        memory=memory
+    )   
+    result = conversation_chain({"question": query})
+    answer = result["answer"]
+    return answer
 
 if __name__ == '__main__':
     app.run(port = 8000, debug=True)
