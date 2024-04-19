@@ -32,14 +32,15 @@ llm = ChatOpenAI(
 embed_model = OpenAIEmbeddings(model="text-embedding-ada-002")
 
 #update
-index_name = "test-new"
+index_name = "test"
 vectorstore = PineconeVectorStore(index_name=index_name, embedding=embed_model)
 
-memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
+memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True,output_key='answer')
 conversation_chain = ConversationalRetrievalChain.from_llm(
+    return_source_documents = True,
     llm=llm,
     chain_type="stuff",
-    retriever= vectorstore.as_retriever(),
+    retriever= vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.9}),
     memory=memory
 )
 
@@ -81,7 +82,7 @@ def scrape_url():
         response = requests.get(url)
         soup = BeautifulSoup(response.content, 'html.parser')
         # text = soup.get_text()
-        text = soup.get_text()
+        text = soup.get_text(strip=True)
         chunks = chunk_text(text)
         #update
         domain_name = get_domain(url)
@@ -112,6 +113,7 @@ def chunk_text(text, chunk_size=1000):
             chunks.append(current_chunk)
             current_chunk = sentence + '. '
     # Add the last chunk if it's not empty
+    #TODO: overlap!
     if current_chunk:
         chunks.append(current_chunk)
     return chunks
@@ -127,6 +129,7 @@ def update_document_store(file_path):
 
 def chat(query):
     result = conversation_chain({"question": query})
+    print(result["source_documents"])
     answer = result["answer"]
     return answer
 
