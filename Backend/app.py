@@ -13,6 +13,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
 from flask_cors import CORS
+from langchain_community.document_loaders import PyPDFLoader
+from langchain_community.document_loaders import UnstructuredWordDocumentLoader
 
 
 app = Flask(__name__)
@@ -46,7 +48,7 @@ conversation_chain = ConversationalRetrievalChain.from_llm(
 )
 
 # Allowed extension check
-ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc'}
+ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc','docx'}
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
@@ -105,7 +107,7 @@ def handle_upload():
             filename = secure_filename(file.filename)
             file_path = os.path.join('./', filename)
             file.save(file_path)
-            update_document_store(file_path)
+            update_document_store(file_path, file.filename.rsplit('.', 1)[1].lower())
             return jsonify({'message': 'File uploaded and processed successfully.'})
     return jsonify({'message': 'Invalid file or no file uploaded.'})
 
@@ -156,13 +158,20 @@ def chunk_text(text, chunk_size=1000):
         chunks.append(current_chunk)
     return chunks
 
-def update_document_store(file_path):
-    loader = TextLoader(file_path=file_path, encoding="utf-8")
-    data = loader.load()
+def update_document_store(file_path, ext):
     text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
-    chunks = text_splitter.split_documents(data)
-    #update
-    vectorstore.add_documents(chunks)
+    if(ext == 'txt'):
+        loader = TextLoader(file_path=file_path, encoding="utf-8")
+    elif(ext == 'pdf'):
+        loader = PyPDFLoader(file_path=file_path)
+    elif(ext == 'doc' or ext == 'docx'):
+        print(file_path)
+        # loader = Docx2txtLoader(file_path = file_path)
+        loader = UnstructuredWordDocumentLoader(file_path=file_path)
+    data = loader.load_and_split(text_splitter=text_splitter)
+    # chunks = text_splitter.split_documents(data)
+    # pages = loader.load_and_split()
+    vectorstore.add_documents(data)
 
 
 def chat(query):
