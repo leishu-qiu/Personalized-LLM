@@ -56,7 +56,7 @@ def index():
 
 @app.route('/query', methods=['POST'])
 def handle_query():
-    user_input = request.form.get('query', '')
+    user_input = request.json['query']
     # print(session.get('selected_sources'))
     # print(session.get('use_filter'))
     use_filter = session.get('use_filter')
@@ -69,7 +69,7 @@ def handle_query():
 
 @app.route('/selective', methods=['POST'])
 def handle_selective_sources():
-    selected_sources = request.get_json().get('selectedSources')
+    selected_sources = request.json['selectedSources']
     session['use_filter'] = True
     session['selected_sources'] = selected_sources    
     return jsonify({'message': 'Sources set successfully'})

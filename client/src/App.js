@@ -1,25 +1,28 @@
 import React, {useState} from 'react';
-import UrlInput from './components/UrlInput';
 import ChatInterface from './components/ChatInterface';
+import FileUpload from './components/FileUpload';
 
 function App() {
-  const [showChat, setShowChat] = useState(false); // Add state to control UI transition
-  const handleUrlSubmitted = () => {
-    setShowChat(true); // Transition to the ChatInterface
-    console.log('show chat on');
+  const [showFileUpload, setShowFileUpload] = useState(false); // Control display of FileUpload
+
+  const handleFileSubmitted = () => {
+    setShowFileUpload(false); // Hide FileUpload after submission
   };
 
-  const handleBackToUrlInput = () => {
-    setShowChat(false); // Allow going back to UrlInput
-    console.log('show url input again');
+  const handleBackToChat = () => {
+    setShowFileUpload(false); // Return to ChatInterface from FileUpload
+  };
+
+  const handleShowFileUpload = () => {
+    setShowFileUpload(true); // Show FileUpload when file button clicked
   };
 
   return (
     <div className='App'>
-      {!showChat ? (
-        <UrlInput onSubmit={handleUrlSubmitted} />
+      {!showFileUpload ? (
+        <ChatInterface onFileButtonClick={handleShowFileUpload} />
       ) : (
-        <ChatInterface onBack={handleBackToUrlInput} />
+        <FileUpload onSubmit={handleFileSubmitted} onBack={handleBackToChat} />
       )}
     </div>
   );
