@@ -123,13 +123,14 @@ function ChatInterface({onBack}) {
                 display: 'flex',
                 flexDirection: 'column',
                 alignItems: message.isBot ? 'flex-start' : 'flex-end',
+                borderRadius: '20px',
               }}
             >
               <Box
-                bgcolor={message.isBot ? 'grey.200' : 'primary.light'}
+                bgcolor={message.isBot ? '#f5f5f5' : '#e6f2ff'}
                 p={1}
                 my={1}
-                borderRadius={2}
+                borderRadius={3.5}
               >
                 {message.text}
               </Box>
