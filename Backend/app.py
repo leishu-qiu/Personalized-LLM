@@ -18,7 +18,7 @@ from langchain_community.document_loaders import UnstructuredWordDocumentLoader
 
 
 app = Flask(__name__)
-CORS(app) 
+CORS(app,supports_credentials=True) 
 app.secret_key = '123456'  
 
 
@@ -46,7 +46,7 @@ conversation_chain = ConversationalRetrievalChain.from_llm(
     retriever= vectorstore.as_retriever(search_type="similarity_score_threshold", search_kwargs={"score_threshold": 0.9}),
     memory=memory
 )
-
+sources = []
 # Allowed extension check
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc','docx'}
 def allowed_file(filename):
@@ -75,6 +75,13 @@ def handle_selective_sources():
     session['use_filter'] = True
     session['selected_sources'] = selected_sources    
     return jsonify({'message': 'Sources set successfully'})
+
+@app.route('/sources', methods=['GET'])
+def return_sources():
+    # if 'sources' not in session:
+    #     print(session.get('sources',[]))
+    #     session['sources'] = []
+    return jsonify({'sources': sources})
 
 @app.route('/selective_off', methods=['POST'])
 def disable_filtering():
@@ -108,7 +115,12 @@ def handle_upload():
             file_path = os.path.join('./', filename)
             file.save(file_path)
             update_document_store(file_path, file.filename.rsplit('.', 1)[1].lower())
+            # if 'sources' not in session:
+            #     session['sources'] = []
+            sources.append(file_path)
+            # session['sources'].append(file_path)  # Store the filename
             return jsonify({'message': 'File uploaded and processed successfully.'})
+            # return jsonify({'sources': session['sources']})
     return jsonify({'message': 'Invalid file or no file uploaded.'})
 
 @app.route('/url', methods=['POST'])
@@ -126,10 +138,15 @@ def scrape_url():
         chunks = chunk_text(text)
         #update
         domain_name = get_domain(url)
+        # if 'sources' not in session:
+        #     session['sources'] = []
+        # session['sources'].append(domain_name) 
+        sources.append(domain_name)
         metadatas = [{'source': domain_name} for _ in chunks]
         vectorstore.add_texts(chunks, metadatas)
         # Optionally, process the text or return a portion of it
         return jsonify({'content': text[:500]})  # Return first 500 characters of the text
+        # return jsonify({'sources': session['sources']})
     except requests.RequestException as e:
         return jsonify({'message': 'Failed to retrieve the URL', 'error': str(e)})
 
