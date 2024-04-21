@@ -12,9 +12,11 @@ from langchain_pinecone import PineconeVectorStore
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse
+from flask_cors import CORS
 
 
 app = Flask(__name__)
+CORS(app) 
 app.secret_key = '123456'  
 
 
@@ -186,4 +188,4 @@ def chat_with_filter(query):
     return answer
 
 if __name__ == '__main__':
-    app.run(port = 8000, debug=True)
+    app.run(port = 3000, debug=True)
