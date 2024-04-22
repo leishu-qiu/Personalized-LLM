@@ -15,6 +15,7 @@ from urllib.parse import urlparse
 from flask_cors import CORS
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.document_loaders import UnstructuredWordDocumentLoader
+from langchain.docstore.document import Document
 
 
 app = Flask(__name__)
@@ -64,10 +65,10 @@ def handle_query():
     use_filter = session.get('use_filter')
     # print(use_filter)
     if use_filter:
-        answer = chat_with_filter(user_input) if user_input else 'No query provided.'
+        answer,references = chat_with_filter(user_input) if user_input else 'No query provided.'
     else:
-        answer = chat(user_input) 
-    return jsonify({'answer': answer})
+        answer,references = chat(user_input) 
+    return jsonify({'answer': answer,'references':references})
 
 @app.route('/selective', methods=['POST'])
 def handle_selective_sources():
@@ -150,6 +151,36 @@ def scrape_url():
     except requests.RequestException as e:
         return jsonify({'message': 'Failed to retrieve the URL', 'error': str(e)})
 
+# @app.route('/urlnew', methods=['POST'])
+# def scrape_url_new():
+#     # This method expects a JSON payload with a URL
+#     if not request.json or 'url' not in request.json:
+#         return jsonify({'message': 'No URL provided'}), 400
+
+#     url = request.json['url']
+#     try:
+#         response = requests.get(url)
+#         soup = BeautifulSoup(response.content, 'html.parser')
+#         # text = soup.get_text()
+#         text = soup.get_text(strip=True)
+#         # chunks = chunk_text(text)
+#         #update
+#         domain_name = get_domain(url)
+#         doc = [Document(page_content=text, metadata = {'source' : 'new'})]
+#         # if 'sources' not in session:
+#         #     session['sources'] = []
+#         # session['sources'].append(domain_name) 
+#         sources.append(domain_name)
+#         text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=200,    separator="\n")
+#         chunks = text_splitter.split_documents(doc)
+#         print(len(chunks))
+#         vectorstore.add_documents(chunks)
+#         # Optionally, process the text or return a portion of it
+#         return jsonify({'content': text[:500]})  # Return first 500 characters of the text
+#         # return jsonify({'sources': session['sources']})
+#     except requests.RequestException as e:
+#         return jsonify({'message': 'Failed to retrieve the URL', 'error': str(e)})
+
 
 def get_domain(url):
     """ Extract the domain name from a URL. """
@@ -193,10 +224,10 @@ def update_document_store(file_path, ext):
 
 def chat(query):
     result = conversation_chain({"question": query})
-    # print(result["source_documents"])
-    print("chat without filter")
+    references = [doc.page_content for doc in result['source_documents']]
+    # print("chat without filter")
     answer = result["answer"]
-    return answer
+    return answer,references
 
 def chat_with_filter(query):
     selected_sources = session.get('selected_sources',[])
@@ -211,7 +242,8 @@ def chat_with_filter(query):
     )   
     result = conversation_chain({"question": query})
     answer = result["answer"]
-    return answer
+    references = [doc.page_content for doc in result['source_documents']]
+    return answer,references
 
 if __name__ == '__main__':
     app.run(port = 3000, debug=True)
