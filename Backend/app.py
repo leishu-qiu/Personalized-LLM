@@ -5,7 +5,7 @@ from werkzeug.utils import secure_filename
 
 from langchain.chains import ConversationalRetrievalChain
 from langchain_openai import ChatOpenAI
-from flask import Flask, render_template, request, jsonify,session
+from flask import Flask, render_template, request, jsonify,g
 from langchain_text_splitters import CharacterTextSplitter
 from langchain_openai import OpenAIEmbeddings
 from langchain_pinecone import PineconeVectorStore
@@ -36,7 +36,7 @@ llm = ChatOpenAI(
 embed_model = OpenAIEmbeddings(model="text-embedding-ada-002")
 
 #update
-index_name = "test"
+index_name = "chatbot"
 vectorstore = PineconeVectorStore(index_name=index_name, embedding=embed_model)
 
 memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True,output_key='answer')
@@ -48,6 +48,8 @@ conversation_chain = ConversationalRetrievalChain.from_llm(
     memory=memory
 )
 sources = []
+selected_sources = []
+use_filter = False
 # Allowed extension check
 ALLOWED_EXTENSIONS = {'txt', 'pdf', 'doc','docx'}
 def allowed_file(filename):
@@ -59,26 +61,40 @@ def index():
 
 @app.route('/query', methods=['POST'])
 def handle_query():
+    global use_filter
     user_input = request.json['query']
     # print(session.get('selected_sources'))
     # print(session.get('use_filter'))
-    use_filter = session.get('use_filter')
+    # use_filter = session.get('use_filter')
     # print(use_filter)
+    # if 'use_filter' not in g:
+    #     g.use_filter = False
     if use_filter:
+        print("use_filter")
         answer,references = chat_with_filter(user_input) if user_input else 'No query provided.'
     else:
+        print("no_filter")
+        print(use_filter)
         answer,references = chat(user_input) 
     return jsonify({'answer': answer,'references':references})
 
 @app.route('/selective', methods=['POST'])
 def handle_selective_sources():
+    global use_filter
+    global selected_sources
     selected_sources = request.json['selectedSources']
-    session['use_filter'] = True
-    session['selected_sources'] = selected_sources    
+    # if 'use_filter' not in g:
+    #     g.use_filter = False
+    # if 'selected_sources' not in g:
+    #     g.use_filter = False
+    use_filter = True
+    # g.selected_sources = selected_sources  
+    print(selected_sources)  
     return jsonify({'message': 'Sources set successfully'})
 
 @app.route('/sources', methods=['GET'])
 def return_sources():
+    global sources
     # if 'sources' not in session:
     #     print(session.get('sources',[]))
     #     session['sources'] = []
@@ -86,12 +102,16 @@ def return_sources():
 
 @app.route('/selective_off', methods=['POST'])
 def disable_filtering():
+    global selected_sources
+    global use_filter
     # Clear specific session variables
-    if 'selected_sources' in session:
-        del session['selected_sources']
+    # if 'selected_sources' in session:
+    #     del session['selected_sources']
+    selected_sources = []
+    print("filter_off")
     # Alternatively, disable filtering without deleting variables
-    session['use_filter'] = False
-    
+    # session['use_filter'] = False
+    use_filter = False
     return jsonify({'message': 'Selective filtering disabled'})
 
 # @app.route('/selective_delete', methods=['POST'])
@@ -109,6 +129,7 @@ def disable_filtering():
 
 @app.route('/upload', methods=['POST'])
 def handle_upload():
+    global sources
     if 'file' in request.files:
         file = request.files['file']
         if file and allowed_file(file.filename):
@@ -126,6 +147,7 @@ def handle_upload():
 
 @app.route('/url', methods=['POST'])
 def scrape_url():
+    global sources
     # This method expects a JSON payload with a URL
     if not request.json or 'url' not in request.json:
         return jsonify({'message': 'No URL provided'}), 400
@@ -230,7 +252,8 @@ def chat(query):
     return answer,references
 
 def chat_with_filter(query):
-    selected_sources = session.get('selected_sources',[])
+    # selected_sources = session.get('selected_sources',[])
+    global selected_sources
     filters = {"source": {"$in": selected_sources}}
     print(filters)
     conversation_chain = ConversationalRetrievalChain.from_llm(
