@@ -8,6 +8,15 @@ import {
   ListItem,
   Paper,
   Modal,
+  Button,
+  Checkbox,
+  FormControl,
+  InputLabel,
+  Select,
+  MenuItem,
+  FormControlLabel,
+  FormGroup,
+  ListItemText,
 } from '@mui/material';
 import SendIcon from '@mui/icons-material/Send';
 import CloseIcon from '@mui/icons-material/Close';
@@ -27,13 +36,76 @@ function ChatInterface({onBack}) {
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({behavior: 'smooth'});
   };
+  const [sources, setSources] = useState([]); // All uploaded sources
+  const [useSelectiveFilter, setUseSelectiveFilter] = useState(false);
+  const [selectedFiles, setSelectedFiles] = useState([]);
+  // useEffect(() => {
+  //   // messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  //   const fetchSources = async () => {
+  //     const response = await fetch('http://localhost:3000/sources');
+  //     const data = await response.json();
+  //     setSources(data.sources);
+  //   };
+
+  //   fetchSources();
+  // }, []); // Empty dependency array means this runs once on mount
+  const fetchSources = async () => {
+    try {
+      const response = await fetch('http://localhost:3000/sources');
+      const data = await response.json();
+      setSources(data.sources);
+    } catch (error) {
+      console.error('Failed to fetch sources:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchSources();
+  }, []);
 
   useEffect(scrollToBottom, [messages]);
+  const handleSubmitSources = async () => {
+    if (useSelectiveFilter && selectedFiles.length > 0) {
+      const response = await fetch('http://localhost:3000/selective', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({selectedSources: selectedFiles}),
+      });
+      const data = await response.json();
+      alert(data.message);
+    } else {
+      alert('No files selected or selective filter is not enabled.');
+    }
+  };
+
+  const handleToggleSelectiveFilter = async (event) => {
+    const checked = event.target.checked;
+    setUseSelectiveFilter(checked);
+
+    if (!checked) {
+      // Checkbox is unchecked, call the backend to disable selective filtering
+      try {
+        const response = await fetch('http://localhost:3000/selective_off', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+        });
+        const data = await response.json();
+        alert(data.message); // Optionally, handle this with a more integrated UI feedback system
+
+        // You might want to also clear the selected files in the state
+        setSelectedFiles([]);
+      } catch (error) {
+        console.error('Failed to disable selective filtering:', error);
+        // Handle errors, perhaps setting state to show an error message
+      }
+    }
+  };
 
   const handleFileUploadSuccess = (message) => {
     handleCloseModal(); // Close the modal first
     const botMessage = {text: message, isBot: true};
     setMessages((currentMessages) => [...currentMessages, botMessage]); // Add success message to chat
+    fetchSources();
   };
 
   const handleSendMessage = async (event) => {
@@ -49,8 +121,23 @@ function ChatInterface({onBack}) {
       body: JSON.stringify(body),
     });
     const data = await response.json();
-    const botMessage = {text: data.answer, isBot: true};
+    const botMessage = {
+      text: data.answer,
+      references: data.references || [],
+      isBot: true,
+      showReferences: false,
+    };
     setMessages((currentMessages) => [...currentMessages, botMessage]);
+  };
+  const toggleReferences = (index) => {
+    setMessages((currentMessages) =>
+      currentMessages.map((msg, msgIndex) => {
+        if (msgIndex === index) {
+          return {...msg, showReferences: !msg.showReferences}; // Toggle the showReferences property
+        }
+        return msg;
+      }),
+    );
   };
 
   const handleOpenModal = () => {
@@ -133,6 +220,24 @@ function ChatInterface({onBack}) {
                 borderRadius={3.5}
               >
                 {message.text}
+                {message.isBot &&
+                  message.references &&
+                  message.references.length > 0 && (
+                    <div>
+                      <button onClick={() => toggleReferences(index)}>
+                        {message.showReferences
+                          ? 'Hide References'
+                          : 'Show References'}
+                      </button>
+                      {message.showReferences && (
+                        <ul>
+                          {message.references.map((ref, refIndex) => (
+                            <li key={refIndex}>{ref}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+                  )}
               </Box>
             </ListItem>
           ))}
@@ -167,6 +272,47 @@ function ChatInterface({onBack}) {
             ),
           }}
         />
+        {/* Toggle and Selective Filtering UI */}
+        <FormGroup>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={useSelectiveFilter}
+                onChange={handleToggleSelectiveFilter}
+              />
+            }
+            label='Enable Selective Filtering'
+          />
+          {useSelectiveFilter && (
+            <FormControl fullWidth>
+              <InputLabel id='demo-multiple-checkbox-label'>
+                Select Files
+              </InputLabel>
+              <Select
+                labelId='demo-multiple-checkbox-label'
+                multiple
+                value={selectedFiles}
+                onChange={(event) => setSelectedFiles(event.target.value)}
+                renderValue={(selected) => selected.join(', ')}
+              >
+                {sources.map((name) => (
+                  <MenuItem key={name} value={name}>
+                    <Checkbox checked={selectedFiles.indexOf(name) > -1} />
+                    <ListItemText primary={name} />
+                  </MenuItem>
+                ))}
+              </Select>
+              <Button
+                onClick={handleSubmitSources}
+                variant='contained'
+                sx={{mt: 2}}
+              >
+                Submit Selection
+              </Button>
+            </FormControl>
+          )}
+        </FormGroup>
+        {/* Other UI components and modal as previously defined */}
       </Box>
     </Box>
   );
